@@ -1,10 +1,10 @@
-#include "Transaction.hpp"
 #include <AssetRepository.hpp>
 #include <Database.hpp>
 #include <ErrorHandling.hpp>
+#include <Logs.hpp>
+#include <Transaction.hpp>
 #include <chrono>
 #include <ctime>
-#include <iostream>
 
 int main() {
   const auto now = std::chrono::system_clock::now();
@@ -12,7 +12,7 @@ int main() {
 
   auto db_result = Database::open("db.sqlite3");
   if (!db_result) {
-    std::cerr << db_result.error();
+    log_error(db_result.error());
     return 1;
   }
 

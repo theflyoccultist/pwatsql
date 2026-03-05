@@ -13,6 +13,7 @@ enum class DbError : std::uint8_t {
   StepFailed,
   BindFailed,
   RowReadFailed,
+  ColumnReadFailed,
   TransactionError,
   NotFound,
   Unknown
@@ -22,17 +23,17 @@ std::ostream &operator<<(std::ostream &os, const DbError &err);
 
 struct Unit {};
 
-template <typename T, typename E> class Result {
+template <typename T, typename E> class [[nodiscard]] Result {
 public:
   static Result ok(T value) { return Result(std::move(value)); }
 
   static Result err(E error) { return Result(std::move(error)); }
 
-  [[nodiscard]] bool has_value() const {
+  [[nodiscard]] bool has_value() const noexcept {
     return std::holds_alternative<T>(data_);
   }
 
-  explicit operator bool() const { return has_value(); }
+  explicit operator bool() const noexcept { return has_value(); }
 
   T &value() {
     assert(has_value());
@@ -59,6 +60,12 @@ public:
       return f(value());
     }
     return decltype(f(value()))::err(error());
+  }
+
+  template <typename F> auto or_else(F &&f) {
+    if (!has_value()) {
+      std::forward<F>(f)(error());
+    }
   }
 
 private:

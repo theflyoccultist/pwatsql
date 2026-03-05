@@ -14,6 +14,9 @@ std::ostream &operator<<(std::ostream &os, const DbError &err) {
   case DbError::BindFailed:
     os << "sqlite error: bind failed";
     break;
+  case DbError::ColumnReadFailed:
+    os << "sqlite error: column read failed";
+    break;
   case DbError::RowReadFailed:
     os << "sqlite error: row read failed";
     break;

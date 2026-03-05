@@ -1,14 +1,24 @@
-#include "ErrorHandling.hpp"
+#include <Logs.hpp>
 #include <Transaction.hpp>
 
 void Transaction::commit() {
-  exec("COMMIT;");
+  auto result = exec("COMMIT;");
+  if (!result) {
+    log_error(result.error());
+    commited = false;
+    return;
+  }
+
   commited = true;
 };
 
 Transaction::~Transaction() {
   if (!commited) {
-    exec("ROLLBACK;");
+    auto result = exec("ROLLBACK;");
+
+    if (!result) {
+      log_error(result.error());
+    }
   }
 }
 
