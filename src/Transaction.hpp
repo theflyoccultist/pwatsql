@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Logs.hpp"
 #include <Database.hpp>
+#include <Logs.hpp>
 
 #include <sqlite3.h>
 
@@ -9,7 +9,7 @@ class Transaction {
 
 public:
   explicit Transaction(Database &db) : db_(db) {
-    exec("BEGIN TRANSACTION;").or_else(error_msg());
+    exec("BEGIN TRANSACTION;").or_else(log_error);
   }
 
   Transaction(const Transaction &) = delete;
