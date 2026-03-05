@@ -1,18 +1,20 @@
-#include "Database.hpp"
+#include <Database.hpp>
+#include <ErrorHandling.hpp>
 #include <stdio.h>
 
-Database::Database(const std::string &filename) {
-  int opened = sqlite3_open(filename.c_str(), &db_);
-  if (opened) {
-    printf("Database could not be opened %s \n", sqlite3_errmsg(db_));
-  } else {
-    printf("Opened database successfully \n");
+Result<Database, DbError> Database::open(const char *path) {
+  sqlite3 *db = nullptr;
+
+  if (sqlite3_open(path, &db) != SQLITE_OK) {
+    return Result<Database, DbError>::err(DbError::OpenFailed);
   }
-};
+
+  return Result<Database, DbError>::ok(Database(db));
+}
 
 Database::~Database() {
   if (db_) {
-    sqlite3_close(db_);
+    sqlite3_close_v2(db_);
     printf("sqlite3 has been closed\n");
   }
 }

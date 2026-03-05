@@ -1,8 +1,9 @@
 #pragma once
 
-#include "Asset.hpp"
-#include "Database.hpp"
-#include <optional>
+#include <Asset.hpp>
+#include <Database.hpp>
+#include <ErrorHandling.hpp>
+
 #include <vector>
 
 class AssetRepository {
@@ -13,7 +14,7 @@ public:
   void deleteSelectedRow(int id);
   void updateData(const Asset &asset);
 
-  std::optional<Asset> getSelectedRow(int id);
+  Result<Asset, DbError> getSelectedRow(int id);
   std::vector<Asset> getAllRows();
 
 private:

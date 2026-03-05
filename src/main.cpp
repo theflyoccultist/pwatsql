@@ -1,8 +1,16 @@
-#include "AssetRepository.hpp"
-#include "Database.hpp"
+#include <AssetRepository.hpp>
+#include <Database.hpp>
+#include <ErrorHandling.hpp>
+#include <iostream>
 
 int main() {
-  Database db("db.sqlite3");
+  auto db_result = Database::open("db.sqlite3");
+  if (!db_result) {
+    std::cerr << "DB Open Failed";
+    return 1;
+  }
+
+  Database db = std::move(db_result.value());
   AssetRepository repo(db);
   repo.createTable();
   repo.insertData({1, "music", "music/loudboom.wav", 1000000, "combat,menu"});
@@ -12,4 +20,6 @@ int main() {
 
   auto asset = repo.getSelectedRow(1);
   auto assets = repo.getAllRows();
+
+  return 0;
 }

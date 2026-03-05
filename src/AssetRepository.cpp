@@ -1,22 +1,34 @@
-#include "AssetRepository.hpp"
-#include "Statement.hpp"
-#include <optional>
+#include <AssetRepository.hpp>
+#include <Statement.hpp>
+
+#include <iostream>
+#include <utility>
 
 void AssetRepository::createTable() {
-  Statement stmt(db_.get(), "CREATE TABLE IF NOT EXISTS ASSETS ("
-                            "ID INTEGER PRIMARY KEY,"
-                            "TYPE TEXT NOT NULL,"
-                            "PATH TEXT NOT NULL UNIQUE,"
-                            "LAST_MODIFIED INTEGER NOT NULL,"
-                            "TAGS TEXT)");
+  auto stmt_result =
+      Statement::prepare(db_.get(), "CREATE TABLE IF NOT EXISTS ASSETS ("
+                                    "ID INTEGER PRIMARY KEY,"
+                                    "TYPE TEXT NOT NULL,"
+                                    "PATH TEXT NOT NULL UNIQUE,"
+                                    "LAST_MODIFIED INTEGER NOT NULL,"
+                                    "TAGS TEXT)");
+  if (!stmt_result) {
+    std::cerr << stmt_result.error() << "\n";
+  }
 
+  Statement stmt = std::move(stmt_result.value());
   stmt.step();
 }
 
 void AssetRepository::insertData(const Asset &asset) {
-  Statement stmt(db_.get(),
-                 "INSERT INTO ASSETS (TYPE, PATH, LAST_MODIFIED, TAGS) "
+  auto stmt_result = Statement::prepare(
+      db_.get(), "INSERT INTO ASSETS (TYPE, PATH, LAST_MODIFIED, TAGS) "
                  "VAlUES (?, ?, ?, ?)");
+  if (!stmt_result) {
+    std::cerr << stmt_result.error() << "\n";
+  }
+
+  Statement stmt = std::move(stmt_result.value());
 
   stmt.bind(1, asset.type);
   stmt.bind(2, asset.path);
@@ -27,17 +39,29 @@ void AssetRepository::insertData(const Asset &asset) {
 }
 
 void AssetRepository::deleteSelectedRow(int id) {
-  Statement stmt(db_.get(), "DELETE FROM ASSETS WHERE ID = ?");
+  auto stmt_result =
+      Statement::prepare(db_.get(), "DELETE FROM ASSETS WHERE ID = ?");
+  if (!stmt_result) {
+    std::cerr << stmt_result.error() << "\n";
+  }
+
+  Statement stmt = std::move(stmt_result.value());
+
   stmt.bind(1, id);
 
   stmt.step();
 }
 
 void AssetRepository::updateData(const Asset &asset) {
-  Statement stmt(
+  auto stmt_result = Statement::prepare(
       db_.get(),
       "UPDATE ASSETS SET TYPE = ?, PATH = ?, LAST_MODIFIED = ?, TAGS = ? "
       "WHERE ID = ?");
+  if (!stmt_result) {
+    std::cerr << stmt_result.error() << "\n";
+  }
+
+  Statement stmt = std::move(stmt_result.value());
 
   stmt.bind(1, asset.type);
   stmt.bind(2, asset.path);
@@ -48,14 +72,19 @@ void AssetRepository::updateData(const Asset &asset) {
   stmt.step();
 }
 
-std::optional<Asset> AssetRepository::getSelectedRow(int id) {
-  Statement stmt(db_.get(),
-                 "SELECT TYPE, PATH, LAST_MODIFIED, TAGS FROM ASSETS "
+Result<Asset, DbError> AssetRepository::getSelectedRow(int id) {
+  auto stmt_result = Statement::prepare(
+      db_.get(), "SELECT TYPE, PATH, LAST_MODIFIED, TAGS FROM ASSETS "
                  "WHERE ID = ?");
+  if (!stmt_result) {
+    std::cerr << stmt_result.error() << "\n";
+  }
+
+  Statement stmt = std::move(stmt_result.value());
 
   stmt.bind(1, id);
   if (!stmt.step()) {
-    return std::nullopt;
+    return Result<Asset, DbError>::err(DbError::RowReadFailed);
   }
 
   Asset asset;
@@ -65,22 +94,35 @@ std::optional<Asset> AssetRepository::getSelectedRow(int id) {
   asset.last_modified = stmt.column_int64(2);
   asset.tags = stmt.column_text(3);
 
-  return asset;
+  return Result<Asset, DbError>::ok(asset);
 }
 
 std::vector<Asset> AssetRepository::getAllRows() {
-  Statement stmt(db_.get(),
-                 "SELECT ID, TYPE, PATH, LAST_MODIFIED, TAGS FROM ASSETS ");
+  auto stmt_result = Statement::prepare(
+      db_.get(), "SELECT ID, TYPE, PATH, LAST_MODIFIED, TAGS FROM ASSETS ");
+  if (!stmt_result) {
+    std::cerr << stmt_result.error() << "\n";
+  }
+
+  Statement stmt = std::move(stmt_result.value());
 
   std::vector<Asset> result;
 
-  while (stmt.step()) {
-    Asset asset;
-    asset.id = stmt.column_int(0);
-    asset.type = stmt.column_text(1);
-    asset.path = stmt.column_text(2);
-    asset.last_modified = stmt.column_int64(3);
-    asset.tags = stmt.column_text(4);
+  for (;;) {
+    auto step = stmt.step();
+
+    if (!step) {
+      std::cerr << step.error() << "\n";
+      break;
+    }
+
+    if (!step.value())
+      break;
+
+    Asset asset{
+        stmt.column_int(0),   stmt.column_text(1), stmt.column_text(2),
+        stmt.column_int64(3), stmt.column_text(4),
+    };
 
     result.push_back(std::move(asset));
   }
