@@ -2,6 +2,7 @@
 
 #include <Asset.hpp>
 #include <Database.hpp>
+#include <DbError.hpp>
 #include <ErrorHandling.hpp>
 
 #include <vector>

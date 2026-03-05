@@ -2,24 +2,8 @@
 
 #include <algorithm>
 #include <cassert>
-#include <cstdint>
-#include <ostream>
 #include <utility>
 #include <variant>
-
-enum class DbError : std::uint8_t {
-  OpenFailed,
-  PrepareFailed,
-  StepFailed,
-  BindFailed,
-  RowReadFailed,
-  ColumnReadFailed,
-  TransactionError,
-  NotFound,
-  Unknown
-};
-
-std::ostream &operator<<(std::ostream &os, const DbError &err);
 
 struct Unit {};
 
@@ -62,7 +46,7 @@ public:
     return decltype(f(value()))::err(error());
   }
 
-  template <typename F> auto or_else(F &&f) {
+  template <typename F> void or_else(F &&f) const {
     if (!has_value()) {
       std::forward<F>(f)(error());
     }

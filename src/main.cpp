@@ -41,12 +41,12 @@ int main() {
                    .last_modified = t_c,
                    .tags = "ally,luck"});
 
-  // repo.deleteSelectedRow(2);
+  repo.deleteSelectedRow(2);
 
   txn.commit();
 
-  auto asset = repo.getSelectedRow(1);
-  auto assets = repo.getAllRows();
+  // auto asset = repo.getSelectedRow(1);
+  // auto assets = repo.getAllRows();
 
   return 0;
 }

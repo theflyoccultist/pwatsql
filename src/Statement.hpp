@@ -1,5 +1,6 @@
 #pragma once
 
+#include <DbError.hpp>
 #include <ErrorHandling.hpp>
 #include <cstdint>
 #include <sqlite3.h>

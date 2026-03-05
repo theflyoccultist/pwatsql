@@ -1,4 +1,3 @@
-#include "ErrorHandling.hpp"
 #include <AssetRepository.hpp>
 #include <Logs.hpp>
 #include <Statement.hpp>
@@ -6,7 +5,7 @@
 #include <utility>
 
 void AssetRepository::createTable() {
-  Result<Statement, DbError> stmt_result =
+  auto stmt_result =
       Statement::prepare(db_.get(), "CREATE TABLE IF NOT EXISTS ASSETS ("
                                     "ID INTEGER PRIMARY KEY,"
                                     "TYPE TEXT NOT NULL,"
@@ -19,7 +18,8 @@ void AssetRepository::createTable() {
   }
 
   Statement stmt = std::move(stmt_result.value());
-  stmt.step().or_else([](auto &e) { log_error(e); });
+
+  stmt.step().or_else(error_msg());
 }
 
 void AssetRepository::insertData(const Asset &asset) {
@@ -33,14 +33,12 @@ void AssetRepository::insertData(const Asset &asset) {
 
   Statement stmt = std::move(stmt_result.value());
 
-  stmt.bind_text(1, asset.type).or_else([](auto &e) { log_error(e); });
-  stmt.bind_text(2, asset.path).or_else([](auto &e) { log_error(e); });
-  stmt.bind_int64(3, asset.last_modified).or_else([](auto &e) {
-    log_error(e);
-  });
-  stmt.bind_text(4, asset.tags).or_else([](auto &e) { log_error(e); });
+  stmt.bind_text(1, asset.type).or_else(error_msg());
+  stmt.bind_text(2, asset.path).or_else(error_msg());
+  stmt.bind_int64(3, asset.last_modified).or_else(error_msg());
+  stmt.bind_text(4, asset.tags).or_else(error_msg());
 
-  stmt.step().or_else([](auto &e) { log_error(e); });
+  stmt.step().or_else(error_msg());
 }
 
 void AssetRepository::deleteSelectedRow(int id) {
@@ -53,9 +51,9 @@ void AssetRepository::deleteSelectedRow(int id) {
 
   Statement stmt = std::move(stmt_result.value());
 
-  stmt.bind_int(1, id).or_else([](auto &e) { log_error(e); });
+  stmt.bind_int(1, id).or_else(error_msg());
 
-  stmt.step().or_else([](auto &e) { log_error(e); });
+  stmt.step().or_else(error_msg());
 }
 
 void AssetRepository::updateData(const Asset &asset) {
@@ -70,15 +68,13 @@ void AssetRepository::updateData(const Asset &asset) {
 
   Statement stmt = std::move(stmt_result.value());
 
-  stmt.bind_text(1, asset.type).or_else([](auto &e) { log_error(e); });
-  stmt.bind_text(2, asset.path).or_else([](auto &e) { log_error(e); });
-  stmt.bind_int64(3, asset.last_modified).or_else([](auto &e) {
-    log_error(e);
-  });
-  stmt.bind_text(4, asset.tags).or_else([](auto &e) { log_error(e); });
-  stmt.bind_int(5, asset.id).or_else([](auto &e) { log_error(e); });
+  stmt.bind_text(1, asset.type).or_else(error_msg());
+  stmt.bind_text(2, asset.path).or_else(error_msg());
+  stmt.bind_int64(3, asset.last_modified).or_else(error_msg());
+  stmt.bind_text(4, asset.tags).or_else(error_msg());
+  stmt.bind_int(5, asset.id).or_else(error_msg());
 
-  stmt.step().or_else([](auto &e) { log_error(e); });
+  stmt.step().or_else(error_msg());
 }
 
 Result<Asset, DbError> AssetRepository::getSelectedRow(int id) {
@@ -93,8 +89,8 @@ Result<Asset, DbError> AssetRepository::getSelectedRow(int id) {
 
   Statement stmt = std::move(stmt_result.value());
 
-  stmt.bind_int(1, id).or_else([](auto &e) { log_error(e); });
-  stmt.step().or_else([](auto &e) { log_error(e); });
+  stmt.bind_int(1, id).or_else(error_msg());
+  stmt.step().or_else(error_msg());
 
   Asset asset;
   asset.id = id;

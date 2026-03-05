@@ -2,6 +2,7 @@
 
 #include <sqlite3.h>
 
+#include <DbError.hpp>
 #include <ErrorHandling.hpp>
 
 class Database {

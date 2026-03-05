@@ -1,15 +1,27 @@
-#include <ErrorHandling.hpp>
+#pragma once
 
-std::ostream &operator<<(std::ostream &os, const DbError &err) {
+#include <cstdint>
+#include <ostream>
+
+enum class DbError : std::uint8_t {
+  OpenFailed,
+  PrepareFailed,
+  BindFailed,
+  RowReadFailed,
+  ColumnReadFailed,
+  TransactionError,
+  ConstraintError,
+  NotFound,
+  Unknown
+};
+
+inline std::ostream &operator<<(std::ostream &os, const DbError &err) {
   switch (err) {
   case DbError::OpenFailed:
     os << "sqlite error: open failed";
     break;
   case DbError::PrepareFailed:
     os << "sqlite error: prepare failed";
-    break;
-  case DbError::StepFailed:
-    os << "sqlite error: step failed";
     break;
   case DbError::BindFailed:
     os << "sqlite error: bind failed";
@@ -22,6 +34,9 @@ std::ostream &operator<<(std::ostream &os, const DbError &err) {
     break;
   case DbError::TransactionError:
     os << "sqlite error: transaction error";
+    break;
+  case DbError::ConstraintError:
+    os << "sqlite error: constraint error";
     break;
   case DbError::NotFound:
     os << "sqlite error: not found";

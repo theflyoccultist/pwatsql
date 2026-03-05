@@ -45,11 +45,11 @@ Result<bool, DbError> Statement::step() {
     return Result<bool, DbError>::ok(true);
   }
 
-  if (SQLITE_DONE == rc) {
+  if (rc == SQLITE_DONE) {
     return Result<bool, DbError>::ok(false);
   }
 
-  return Result<bool, DbError>::err(DbError::StepFailed);
+  return Result<bool, DbError>::err(DbError::ConstraintError);
 }
 
 int Statement::column_int(int index) {
