@@ -1,6 +1,7 @@
 #include <Database.hpp>
 #include <ErrorHandling.hpp>
-#include <stdio.h>
+#include <cstdio>
+#include <iostream>
 
 Result<Database, DbError> Database::open(const char *path) {
   sqlite3 *db = nullptr;
@@ -9,13 +10,14 @@ Result<Database, DbError> Database::open(const char *path) {
     return Result<Database, DbError>::err(DbError::OpenFailed);
   }
 
+  std::cout << "sqlite3 has been opened\n";
   return Result<Database, DbError>::ok(Database(db));
 }
 
 Database::~Database() {
-  if (db_) {
+  if (db_ != nullptr) {
     sqlite3_close_v2(db_);
-    printf("sqlite3 has been closed\n");
+    std::cout << "sqlite3 has been closed\n";
   }
 }
 

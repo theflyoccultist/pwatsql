@@ -13,23 +13,22 @@ public:
   Database(const Database &) = delete;
   Database &operator=(const Database &) = delete;
 
-  Database(Database &&other) noexcept {
-    db_ = other.db_;
-    other.db_ = nullptr;
-  }
+  Database(Database &&other) noexcept : db_(other.db_) { other.db_ = nullptr; }
 
   Database &operator=(Database &&other) noexcept {
     if (this != &other) {
-      if (db_)
+      if (db_ != nullptr) {
         sqlite3_close(db_);
+      }
 
       db_ = other.db_;
       other.db_ = nullptr;
     }
+
     return *this;
   }
 
-  sqlite3 *get() const noexcept;
+  [[nodiscard]] sqlite3 *get() const noexcept;
 
 private:
   sqlite3 *db_ = nullptr;

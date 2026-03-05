@@ -17,8 +17,8 @@ std::ostream &operator<<(std::ostream &os, const DbError &err) {
   case DbError::RowReadFailed:
     os << "sqlite error: row read failed";
     break;
-  case DbError::ConstraintViolation:
-    os << "sqlite error: constraint violation";
+  case DbError::TransactionError:
+    os << "sqlite error: transaction error";
     break;
   case DbError::NotFound:
     os << "sqlite error: not found";

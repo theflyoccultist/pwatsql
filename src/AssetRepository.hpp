@@ -9,6 +9,15 @@
 class AssetRepository {
 public:
   explicit AssetRepository(Database &db) : db_(db) {}
+
+  AssetRepository(const AssetRepository &) = delete;
+  AssetRepository &operator=(const AssetRepository &) = delete;
+
+  AssetRepository(const AssetRepository &&) = delete;
+  AssetRepository &operator=(const AssetRepository &&) = delete;
+
+  ~AssetRepository() = default;
+
   void createTable();
   void insertData(const Asset &asset);
   void deleteSelectedRow(int id);

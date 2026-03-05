@@ -30,10 +30,10 @@ void AssetRepository::insertData(const Asset &asset) {
 
   Statement stmt = std::move(stmt_result.value());
 
-  stmt.bind(1, asset.type);
-  stmt.bind(2, asset.path);
-  stmt.bind(3, asset.last_modified);
-  stmt.bind(4, asset.tags);
+  stmt.bind_text(1, asset.type);
+  stmt.bind_text(2, asset.path);
+  stmt.bind_int64(3, asset.last_modified);
+  stmt.bind_text(4, asset.tags);
 
   stmt.step();
 }
@@ -47,7 +47,7 @@ void AssetRepository::deleteSelectedRow(int id) {
 
   Statement stmt = std::move(stmt_result.value());
 
-  stmt.bind(1, id);
+  stmt.bind_int(1, id);
 
   stmt.step();
 }
@@ -63,11 +63,11 @@ void AssetRepository::updateData(const Asset &asset) {
 
   Statement stmt = std::move(stmt_result.value());
 
-  stmt.bind(1, asset.type);
-  stmt.bind(2, asset.path);
-  stmt.bind(3, asset.last_modified);
-  stmt.bind(4, asset.tags);
-  stmt.bind(5, asset.id);
+  stmt.bind_text(1, asset.type);
+  stmt.bind_text(2, asset.path);
+  stmt.bind_int64(3, asset.last_modified);
+  stmt.bind_text(4, asset.tags);
+  stmt.bind_int(5, asset.id);
 
   stmt.step();
 }
@@ -82,7 +82,7 @@ Result<Asset, DbError> AssetRepository::getSelectedRow(int id) {
 
   Statement stmt = std::move(stmt_result.value());
 
-  stmt.bind(1, id);
+  stmt.bind_int(1, id);
   if (!stmt.step()) {
     return Result<Asset, DbError>::err(DbError::RowReadFailed);
   }
@@ -116,12 +116,16 @@ std::vector<Asset> AssetRepository::getAllRows() {
       break;
     }
 
-    if (!step.value())
+    if (!step.value()) {
       break;
+    }
 
     Asset asset{
-        stmt.column_int(0),   stmt.column_text(1), stmt.column_text(2),
-        stmt.column_int64(3), stmt.column_text(4),
+        .id = stmt.column_int(0),
+        .type = stmt.column_text(1),
+        .path = stmt.column_text(2),
+        .last_modified = stmt.column_int64(3),
+        .tags = stmt.column_text(4),
     };
 
     result.push_back(std::move(asset));

@@ -2,17 +2,18 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstdint>
 #include <ostream>
 #include <utility>
 #include <variant>
 
-enum class DbError {
+enum class DbError : std::uint8_t {
   OpenFailed,
   PrepareFailed,
   StepFailed,
   BindFailed,
   RowReadFailed,
-  ConstraintViolation,
+  TransactionError,
   NotFound,
   Unknown
 };
@@ -27,7 +28,9 @@ public:
 
   static Result err(E error) { return Result(std::move(error)); }
 
-  bool has_value() const { return std::holds_alternative<T>(data_); }
+  [[nodiscard]] bool has_value() const {
+    return std::holds_alternative<T>(data_);
+  }
 
   explicit operator bool() const { return has_value(); }
 
@@ -52,8 +55,9 @@ public:
   }
 
   template <typename F> auto and_then(F f) {
-    if (has_value())
+    if (has_value()) {
       return f(value());
+    }
     return decltype(f(value()))::err(error());
   }
 
