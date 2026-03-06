@@ -26,6 +26,7 @@ public:
 
   Result<Asset, DbError> getSelectedRow(int id);
   std::vector<Asset> getAllRows();
+  std::vector<Asset> getAssetsByTag(const char *tag);
 
 private:
   Database &db_;

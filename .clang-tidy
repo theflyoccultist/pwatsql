@@ -4,6 +4,7 @@ Checks: >
   cppcoreguidelines-*,
   -cppcoreguidelines-pro-type-reinterpret-cast,
   -cppcoreguidelines-avoid-const-or-ref-data-members,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
   misc-*,
   modernize-*,
   -modernize-use-trailing-return-type,

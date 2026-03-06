@@ -5,14 +5,28 @@
 #include <Transaction.hpp>
 #include <chrono>
 #include <ctime>
+#include <string>
 
-int main() {
+int main(int argc, char **argv) {
+  bool verbose = false;
+
+  for (int i = 1; i < argc; ++i) {
+    std::string arg = argv[1];
+
+    if (arg == "-v" || arg == "--verbose") {
+      verbose = true;
+    }
+  }
+
+  verbose ? logger::set_level(LogLevel::Info)
+          : logger::set_level(LogLevel::Error);
+
   const auto now = std::chrono::system_clock::now();
   const std::time_t t_c = std::chrono::system_clock::to_time_t(now);
 
   auto db_result = Database::open("db.sqlite3");
   if (!db_result) {
-    log_error(db_result.error());
+    logger::error(db_result.error());
     return 1;
   }
 
@@ -45,8 +59,18 @@ int main() {
 
   txn.commit();
 
-  // auto asset = repo.getSelectedRow(1);
-  // auto assets = repo.getAllRows();
+  auto asset = repo.getSelectedRow(1);
+  asset.or_else(logger::error);
+
+  if (asset) {
+    logger::info(asset.value());
+  }
+
+  auto assets = repo.getAllRows();
+
+  for (const auto &a : assets) {
+    logger::info(a);
+  }
 
   return 0;
 }

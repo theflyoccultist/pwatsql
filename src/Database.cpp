@@ -10,14 +10,14 @@ Result<Database, DbError> Database::open(const char *path) {
     return Result<Database, DbError>::err(DbError::OpenFailed);
   }
 
-  log_info("sqlite3 has been opened");
+  logger::info("sqlite3 has been opened");
   return Result<Database, DbError>::ok(Database(db));
 }
 
 Database::~Database() {
   if (db_ != nullptr) {
     sqlite3_close_v2(db_);
-    log_info("sqlite3 has been closed");
+    logger::info("sqlite3 has been closed");
   }
 }
 

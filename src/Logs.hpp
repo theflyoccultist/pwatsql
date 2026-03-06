@@ -1,12 +1,31 @@
 #pragma once
 
 #include <DbError.hpp>
+
+#include <cstdint>
 #include <iostream>
 
-namespace {
-inline void log_error(const DbError &msg) {
+enum class LogLevel : std::uint8_t {
+  Error,
+  Info,
+};
+
+struct Level {
+  static LogLevel current_level;
+};
+
+namespace logger {
+inline void set_level(LogLevel level) { Level::current_level = level; }
+
+inline void error(const DbError &msg) {
   std::cerr << "[ERROR] " << msg << "\n";
 }
 
-inline void log_info(const auto &msg) { std::cout << "[INFO] " << msg << "\n"; }
-} // namespace
+inline void info(const auto &msg) {
+  if (Level::current_level < LogLevel::Info) {
+    return;
+  }
+
+  std::cout << "[INFO] " << msg << "\n";
+}
+} // namespace logger

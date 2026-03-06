@@ -3,6 +3,7 @@
 #include <Statement.hpp>
 
 #include <utility>
+#include <vector>
 
 void AssetRepository::createTable() {
   auto stmt_result =
@@ -13,13 +14,13 @@ void AssetRepository::createTable() {
                                     "LAST_MODIFIED INTEGER NOT NULL,"
                                     "TAGS TEXT)");
   if (!stmt_result) {
-    log_error(stmt_result.error());
+    logger::error(stmt_result.error());
     return;
   }
 
   Statement stmt = std::move(stmt_result.value());
 
-  stmt.step().or_else(log_error);
+  stmt.step().or_else(logger::error);
 }
 
 void AssetRepository::insertData(const Asset &asset) {
@@ -27,33 +28,33 @@ void AssetRepository::insertData(const Asset &asset) {
       db_.get(), "INSERT INTO ASSETS (TYPE, PATH, LAST_MODIFIED, TAGS) "
                  "VAlUES (?, ?, ?, ?)");
   if (!stmt_result) {
-    log_error(stmt_result.error());
+    logger::error(stmt_result.error());
     return;
   }
 
   Statement stmt = std::move(stmt_result.value());
 
-  stmt.bind_text(1, asset.type).or_else(log_error);
-  stmt.bind_text(2, asset.path).or_else(log_error);
-  stmt.bind_int64(3, asset.last_modified).or_else(log_error);
-  stmt.bind_text(4, asset.tags).or_else(log_error);
+  stmt.bind_text(1, asset.type).or_else(logger::error);
+  stmt.bind_text(2, asset.path).or_else(logger::error);
+  stmt.bind_int64(3, asset.last_modified).or_else(logger::error);
+  stmt.bind_text(4, asset.tags).or_else(logger::error);
 
-  stmt.step().or_else(log_error);
+  stmt.step().or_else(logger::error);
 }
 
 void AssetRepository::deleteSelectedRow(int id) {
   auto stmt_result =
       Statement::prepare(db_.get(), "DELETE FROM ASSETS WHERE ID = ?");
   if (!stmt_result) {
-    log_error(stmt_result.error());
+    logger::error(stmt_result.error());
     return;
   }
 
   Statement stmt = std::move(stmt_result.value());
 
-  stmt.bind_int(1, id).or_else(log_error);
+  stmt.bind_int(1, id).or_else(logger::error);
 
-  stmt.step().or_else(log_error);
+  stmt.step().or_else(logger::error);
 }
 
 void AssetRepository::updateData(const Asset &asset) {
@@ -62,19 +63,19 @@ void AssetRepository::updateData(const Asset &asset) {
       "UPDATE ASSETS SET TYPE = ?, PATH = ?, LAST_MODIFIED = ?, TAGS = ? "
       "WHERE ID = ?");
   if (!stmt_result) {
-    log_error(stmt_result.error());
+    logger::error(stmt_result.error());
     return;
   }
 
   Statement stmt = std::move(stmt_result.value());
 
-  stmt.bind_text(1, asset.type).or_else(log_error);
-  stmt.bind_text(2, asset.path).or_else(log_error);
-  stmt.bind_int64(3, asset.last_modified).or_else(log_error);
-  stmt.bind_text(4, asset.tags).or_else(log_error);
-  stmt.bind_int(5, asset.id).or_else(log_error);
+  stmt.bind_text(1, asset.type).or_else(logger::error);
+  stmt.bind_text(2, asset.path).or_else(logger::error);
+  stmt.bind_int64(3, asset.last_modified).or_else(logger::error);
+  stmt.bind_text(4, asset.tags).or_else(logger::error);
+  stmt.bind_int(5, asset.id).or_else(logger::error);
 
-  stmt.step().or_else(log_error);
+  stmt.step().or_else(logger::error);
 }
 
 Result<Asset, DbError> AssetRepository::getSelectedRow(int id) {
@@ -83,14 +84,14 @@ Result<Asset, DbError> AssetRepository::getSelectedRow(int id) {
                  "WHERE ID = ?");
 
   if (!stmt_result) {
-    log_error(stmt_result.error());
+    logger::error(stmt_result.error());
     return Result<Asset, DbError>::err(DbError::PrepareFailed);
   }
 
   Statement stmt = std::move(stmt_result.value());
 
-  stmt.bind_int(1, id).or_else(log_error);
-  stmt.step().or_else(log_error);
+  stmt.bind_int(1, id).or_else(logger::error);
+  stmt.step().or_else(logger::error);
 
   Asset asset;
   asset.id = id;
@@ -106,7 +107,7 @@ std::vector<Asset> AssetRepository::getAllRows() {
   auto stmt_result = Statement::prepare(
       db_.get(), "SELECT ID, TYPE, PATH, LAST_MODIFIED, TAGS FROM ASSETS ");
   if (!stmt_result) {
-    log_error(stmt_result.error());
+    logger::error(stmt_result.error());
     return {};
   }
 
@@ -118,7 +119,7 @@ std::vector<Asset> AssetRepository::getAllRows() {
     auto step = stmt.step();
 
     if (!step) {
-      log_error(step.error());
+      logger::error(step.error());
       break;
     }
 
@@ -139,3 +140,5 @@ std::vector<Asset> AssetRepository::getAllRows() {
 
   return result;
 };
+
+std::vector<Asset> AssetRepository::getAssetsByTag(const char *tag) {}
