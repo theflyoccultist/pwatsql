@@ -21,6 +21,8 @@ int main(int argc, char **argv) {
   verbose ? logger::set_level(LogLevel::Info)
           : logger::set_level(LogLevel::Error);
 
+  // Test Program
+
   const auto now = std::chrono::system_clock::now();
   const std::time_t t_c = std::chrono::system_clock::to_time_t(now);
 
@@ -55,21 +57,33 @@ int main(int argc, char **argv) {
                    .last_modified = t_c,
                    .tags = "ally,luck"});
 
-  repo.deleteSelectedRow(2);
+  // repo.deleteSelectedRow(2);
 
   txn.commit();
 
-  auto asset = repo.getSelectedRow(1);
+  auto asset = repo.getAssetById(1);
   asset.or_else(logger::error);
 
   if (asset) {
     logger::info(asset.value());
   }
 
-  auto assets = repo.getAllRows();
+  auto assets = repo.getAllAssets();
 
-  for (const auto &a : assets) {
+  for (const auto &a : assets.value()) {
     logger::info(a);
+  }
+
+  auto tags = repo.getAssetsByTag("ally");
+
+  for (const auto &t : tags.value()) {
+    logger::info(t);
+  }
+
+  auto types = repo.getAssetsByType("sfx");
+
+  for (const auto &t : types.value()) {
+    logger::info(t);
   }
 
   return 0;
