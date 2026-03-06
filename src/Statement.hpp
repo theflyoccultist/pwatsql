@@ -8,7 +8,7 @@
 
 class Statement {
 public:
-  static Result<Statement, DbError> prepare(sqlite3 *db, const char *query);
+  static ResultT<Statement> prepare(sqlite3 *db, const char *query);
 
   ~Statement();
 
@@ -33,11 +33,11 @@ public:
 
   [[nodiscard]] sqlite3_stmt *get() const noexcept { return stmt_; }
 
-  Result<Unit, DbError> bind_int(int index, int value);
-  Result<Unit, DbError> bind_text(int index, const std::string &value);
-  Result<Unit, DbError> bind_int64(int index, std::int64_t value);
+  ResultT<Unit> bind_int(int index, int value);
+  ResultT<Unit> bind_text(int index, const std::string &value);
+  ResultT<Unit> bind_int64(int index, std::int64_t value);
 
-  Result<bool, DbError> step();
+  ResultT<bool> step();
 
   int column_int(int index);
   std::int64_t column_int64(int index);

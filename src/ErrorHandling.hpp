@@ -1,5 +1,6 @@
 #pragma once
 
+#include <DbError.hpp>
 #include <algorithm>
 #include <cassert>
 #include <utility>
@@ -58,3 +59,5 @@ private:
   Result(T value) : data_(std::move(value)) {}
   Result(E error) : data_(std::move(error)) {}
 };
+
+template <typename T> using ResultT = Result<T, DbError>;

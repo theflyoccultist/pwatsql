@@ -1,13 +1,13 @@
 #include <ErrorHandling.hpp>
 #include <Statement.hpp>
 
-Result<Statement, DbError> Statement::prepare(sqlite3 *db, const char *query) {
+ResultT<Statement> Statement::prepare(sqlite3 *db, const char *query) {
   sqlite3_stmt *stmt = nullptr;
 
   if (sqlite3_prepare_v2(db, query, -1, &stmt, nullptr) != SQLITE_OK) {
-    return Result<Statement, DbError>::err(DbError::PrepareFailed);
+    return ResultT<Statement>::err(DbError::PrepareFailed);
   };
-  return Result<Statement, DbError>::ok(Statement(stmt));
+  return ResultT<Statement>::ok(Statement(stmt));
 }
 
 Statement::~Statement() {
@@ -16,40 +16,39 @@ Statement::~Statement() {
   }
 };
 
-Result<Unit, DbError> Statement::bind_int(int index, int value) {
+ResultT<Unit> Statement::bind_int(int index, int value) {
   if (sqlite3_bind_int(stmt_, index, value) != SQLITE_OK) {
-    return Result<Unit, DbError>::err(DbError::BindFailed);
+    return ResultT<Unit>::err(DbError::BindFailed);
   }
-  return Result<Unit, DbError>::ok(Unit{});
+  return ResultT<Unit>::ok(Unit{});
 };
 
-Result<Unit, DbError> Statement::bind_int64(int index, std::int64_t value) {
+ResultT<Unit> Statement::bind_int64(int index, std::int64_t value) {
   if (sqlite3_bind_int64(stmt_, index, value) != SQLITE_OK) {
-    return Result<Unit, DbError>::err(DbError::BindFailed);
+    return ResultT<Unit>::err(DbError::BindFailed);
   }
-  return Result<Unit, DbError>::ok(Unit{});
+  return ResultT<Unit>::ok(Unit{});
 };
 
-Result<Unit, DbError> Statement::bind_text(int index,
-                                           const std::string &value) {
+ResultT<Unit> Statement::bind_text(int index, const std::string &value) {
   if (sqlite3_bind_text(stmt_, index, value.c_str(), -1, nullptr) !=
       SQLITE_OK) {
-    return Result<Unit, DbError>::err(DbError::BindFailed);
+    return ResultT<Unit>::err(DbError::BindFailed);
   }
-  return Result<Unit, DbError>::ok(Unit{});
+  return ResultT<Unit>::ok(Unit{});
 };
 
-Result<bool, DbError> Statement::step() {
+ResultT<bool> Statement::step() {
   int rc = sqlite3_step(stmt_);
   if (rc == SQLITE_ROW) {
-    return Result<bool, DbError>::ok(true);
+    return ResultT<bool>::ok(true);
   }
 
   if (rc == SQLITE_DONE) {
-    return Result<bool, DbError>::ok(false);
+    return ResultT<bool>::ok(false);
   }
 
-  return Result<bool, DbError>::err(DbError::ConstraintError);
+  return ResultT<bool>::err(DbError::ConstraintError);
 }
 
 int Statement::column_int(int index) {

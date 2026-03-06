@@ -37,27 +37,28 @@ int main(int argc, char **argv) {
 
   Transaction txn(db);
 
-  repo.createTable();
+  repo.createTable().or_else(logger::error);
 
-  repo.insertData({.id = 1,
-                   .type = "music",
+  repo.insertData({.type = "music",
                    .path = "music/loudboom.wav",
                    .last_modified = t_c,
-                   .tags = "combat,menu"});
+                   .tags = "combat,menu"})
+      .or_else(logger::error);
 
-  repo.insertData({.id = 2,
-                   .type = "sfx",
+  repo.insertData({.type = "sfx",
                    .path = "sfx/danger.ogg",
                    .last_modified = t_c,
-                   .tags = "enemy,action"});
+                   .tags = "enemy,action"})
+      .or_else(logger::error);
 
   repo.updateData({.id = 2,
                    .type = "sfx",
                    .path = "sfx/angelic.ogg",
                    .last_modified = t_c,
-                   .tags = "ally,luck"});
+                   .tags = "ally,luck"})
+      .or_else(logger::error);
 
-  // repo.deleteSelectedRow(2);
+  repo.deleteSelectedRow(1).or_else(logger::error);
 
   txn.commit();
 
