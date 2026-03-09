@@ -9,7 +9,7 @@
 class Statement {
 public:
   static ResultT<Statement> prepare(sqlite3 *db, const char *query);
-
+  void reset();
   ~Statement();
 
   Statement(const Statement &) = delete;

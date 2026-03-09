@@ -10,6 +10,11 @@ ResultT<Statement> Statement::prepare(sqlite3 *db, const char *query) {
   return ResultT<Statement>::ok(Statement(stmt));
 }
 
+void Statement::reset() {
+  sqlite3_reset(stmt_);
+  sqlite3_clear_bindings(stmt_);
+}
+
 Statement::~Statement() {
   if (stmt_ != nullptr) {
     sqlite3_finalize(stmt_);

@@ -2,6 +2,7 @@
 #include <Logs.hpp>
 #include <Statement.hpp>
 
+#include <format>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -25,8 +26,18 @@ ResultT<Unit> AssetRepository::createTable() {
   Statement stmt = std::move(stmt_result.value());
 
   stmt.step().or_else(logger::error);
+  stmt.reset();
+
+  logger::info("Table created");
+
   return ResultT<Unit>::ok(Unit{});
 }
+
+const int type_idx = 1;
+const int path_idx = 2;
+const int lastmodified_idx = 3;
+const int tags_idx = 4;
+const int id_idx = 5;
 
 ResultT<Unit> AssetRepository::insertData(const NewAsset &asset) {
   auto stmt_result = Statement::prepare(
@@ -39,12 +50,17 @@ ResultT<Unit> AssetRepository::insertData(const NewAsset &asset) {
 
   Statement stmt = std::move(stmt_result.value());
 
-  stmt.bind_text(1, asset.type).or_else(logger::error);
-  stmt.bind_text(2, asset.path).or_else(logger::error);
-  stmt.bind_int64(3, asset.last_modified).or_else(logger::error);
-  stmt.bind_text(4, asset.tags).or_else(logger::error);
+  stmt.bind_text(type_idx, asset.type).or_else(logger::error);
+  stmt.bind_text(path_idx, asset.path).or_else(logger::error);
+  stmt.bind_int64(lastmodified_idx, asset.last_modified).or_else(logger::error);
+  stmt.bind_text(tags_idx, asset.tags).or_else(logger::error);
 
   stmt.step().or_else(logger::error);
+  stmt.reset();
+
+  logger::info(
+      std::format("Asset inserted: type={} path={}", asset.type, asset.path));
+
   return ResultT<Unit>::ok(Unit{});
 }
 
@@ -60,13 +76,17 @@ ResultT<Unit> AssetRepository::updateData(const AssetUpdate &asset) {
 
   Statement stmt = std::move(stmt_result.value());
 
-  stmt.bind_text(1, asset.type).or_else(logger::error);
-  stmt.bind_text(2, asset.path).or_else(logger::error);
-  stmt.bind_int64(3, asset.last_modified).or_else(logger::error);
-  stmt.bind_text(4, asset.tags).or_else(logger::error);
-  stmt.bind_int(5, asset.id).or_else(logger::error);
+  stmt.bind_text(type_idx, asset.type).or_else(logger::error);
+  stmt.bind_text(path_idx, asset.path).or_else(logger::error);
+  stmt.bind_int64(lastmodified_idx, asset.last_modified).or_else(logger::error);
+  stmt.bind_text(tags_idx, asset.tags).or_else(logger::error);
+  stmt.bind_int(id_idx, asset.id).or_else(logger::error);
 
   stmt.step().or_else(logger::error);
+  stmt.reset();
+
+  logger::info(std::format("Asset updated: id={}", asset.id));
+
   return ResultT<Unit>::ok(Unit{});
 }
 
@@ -83,6 +103,10 @@ ResultT<Unit> AssetRepository::deleteSelectedRow(int id) {
   stmt.bind_int(1, id).or_else(logger::error);
 
   stmt.step().or_else(logger::error);
+  stmt.reset();
+
+  logger::info(std::format("Asset deleted: id={}", id));
+
   return ResultT<Unit>::ok(Unit{});
 }
 
@@ -107,6 +131,10 @@ ResultT<Asset> AssetRepository::getAssetById(int id) {
   asset.path = stmt.column_text(1);
   asset.last_modified = stmt.column_int64(2);
   asset.tags = stmt.column_text(3);
+
+  stmt.reset();
+
+  logger::info(std::format("Asset retrieved: id={}", asset.id));
 
   return Result<Asset, DbError>::ok(asset);
 }
@@ -135,6 +163,10 @@ ResultT<vector<Asset>> getAssets(Statement &stmt, vector<Asset> &result) {
 
     result.push_back(std::move(asset));
   }
+
+  stmt.reset();
+
+  logger::info(std::format("Retrieved {} assets from database", result.size()));
 
   return Result<vector<Asset>, DbError>::ok(result);
 }

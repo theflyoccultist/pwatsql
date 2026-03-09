@@ -58,8 +58,6 @@ int main(int argc, char **argv) {
                    .tags = "ally,luck"})
       .or_else(logger::error);
 
-  repo.deleteSelectedRow(1).or_else(logger::error);
-
   txn.commit();
 
   auto asset = repo.getAssetById(1);
@@ -86,6 +84,8 @@ int main(int argc, char **argv) {
   for (const auto &t : types.value()) {
     logger::info(t);
   }
+
+  repo.deleteSelectedRow(1).or_else(logger::error);
 
   return 0;
 }
