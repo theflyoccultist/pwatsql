@@ -1,9 +1,9 @@
 #pragma once
 
+#include <Asset.hpp>
 #include <DbError.hpp>
-
 #include <cstdint>
-#include <iostream>
+#include <string>
 
 enum class LogLevel : std::uint8_t {
   Error,
@@ -14,18 +14,12 @@ struct Level {
   static LogLevel current_level;
 };
 
-namespace logger {
-inline void set_level(LogLevel level) { Level::current_level = level; }
+class logger {
+public:
+  static void set_level(LogLevel level);
 
-inline void error(const DbError &msg) {
-  std::cerr << "[ERROR] " << msg << "\n";
-}
+  static void error(const DbError &msg);
 
-inline void info(const auto &msg) {
-  if (Level::current_level < LogLevel::Info) {
-    return;
-  }
-
-  std::cout << "[INFO] " << msg << "\n";
-}
-} // namespace logger
+  static void info(const std::string &msg);
+  static void info(const Asset &msg);
+};
