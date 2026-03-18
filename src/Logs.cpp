@@ -16,11 +16,3 @@ void logger::info(const std::string &msg) {
 
   std::cout << "[INFO] " << msg << "\n";
 }
-
-void logger::info(const Asset &msg) {
-  if (current_level < LogLevel::Info) {
-    return;
-  }
-
-  std::cout << "[INFO] " << msg << "\n";
-}

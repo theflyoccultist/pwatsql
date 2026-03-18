@@ -58,7 +58,9 @@ ResultT<Unit> AssetRepository::insertData(const NewAsset &asset) {
   stmt.step().or_else(logger::error);
   stmt.reset();
 
-  logger::info(std::format("Asset inserted: {}", asset.type, asset.path));
+  logger::info(
+      std::format("Asset inserted: type={} path={} last_modified={} tags={}",
+                  asset.type, asset.path, asset.last_modified, asset.tags));
 
   return ResultT<Unit>::ok(Unit{});
 }
@@ -84,7 +86,9 @@ ResultT<Unit> AssetRepository::updateData(const AssetUpdate &asset) {
   stmt.step().or_else(logger::error);
   stmt.reset();
 
-  logger::info(std::format("Asset updated: id={}", asset.id));
+  logger::info(std::format(
+      "Asset updated: type={} path={} last_modified={} tags={} id={}",
+      asset.type, asset.path, asset.last_modified, asset.tags, asset.id));
 
   return ResultT<Unit>::ok(Unit{});
 }

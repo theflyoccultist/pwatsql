@@ -17,7 +17,6 @@ public:
   static void error(const DbError &msg);
 
   static void info(const std::string &msg);
-  static void info(const Asset &msg);
 
 private:
   static LogLevel current_level;
