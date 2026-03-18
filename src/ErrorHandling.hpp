@@ -55,7 +55,6 @@ public:
 
 private:
   std::variant<T, E> data_;
-
   Result(T value) : data_(std::move(value)) {}
   Result(E error) : data_(std::move(error)) {}
 };

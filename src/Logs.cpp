@@ -1,16 +1,16 @@
 #include <Logs.hpp>
 #include <iostream>
 
-LogLevel Level::current_level = LogLevel::Error;
+LogLevel logger::current_level = LogLevel::Error;
 
-void logger::set_level(LogLevel level) { Level::current_level = level; }
+void logger::set_level(LogLevel level) { current_level = level; }
 
 void logger::error(const DbError &msg) {
   std::cerr << "[ERROR] " << msg << "\n";
 }
 
 void logger::info(const std::string &msg) {
-  if (Level::current_level < LogLevel::Info) {
+  if (current_level < LogLevel::Info) {
     return;
   }
 
@@ -18,7 +18,7 @@ void logger::info(const std::string &msg) {
 }
 
 void logger::info(const Asset &msg) {
-  if (Level::current_level < LogLevel::Info) {
+  if (current_level < LogLevel::Info) {
     return;
   }
 

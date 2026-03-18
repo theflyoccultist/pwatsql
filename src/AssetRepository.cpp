@@ -58,8 +58,7 @@ ResultT<Unit> AssetRepository::insertData(const NewAsset &asset) {
   stmt.step().or_else(logger::error);
   stmt.reset();
 
-  logger::info(
-      std::format("Asset inserted: type={} path={}", asset.type, asset.path));
+  logger::info(std::format("Asset inserted: {}", asset.type, asset.path));
 
   return ResultT<Unit>::ok(Unit{});
 }

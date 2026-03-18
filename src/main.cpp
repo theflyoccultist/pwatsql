@@ -1,3 +1,4 @@
+#include "AssetRegistry.hpp"
 #include <AssetRepository.hpp>
 #include <Database.hpp>
 #include <ErrorHandling.hpp>
@@ -34,6 +35,7 @@ int main(int argc, char **argv) {
 
   Database db = std::move(db_result.value());
   AssetRepository repo(db);
+  AssetRegistry registry(repo);
 
   Transaction txn(db);
 
@@ -51,6 +53,12 @@ int main(int argc, char **argv) {
                    .tags = "enemy,action"})
       .or_else(logger::error);
 
+  repo.insertData({.type = "texture",
+                   .path = "texture/hero.png",
+                   .last_modified = t_c,
+                   .tags = "character,mesh"})
+      .or_else(logger::error);
+
   repo.updateData({.id = 2,
                    .type = "sfx",
                    .path = "sfx/angelic.ogg",
@@ -60,29 +68,19 @@ int main(int argc, char **argv) {
 
   txn.commit();
 
-  auto asset = repo.getAssetById(1);
-  asset.or_else(logger::error);
-
-  if (asset) {
-    logger::info(asset.value());
+  auto music = registry.getMusic();
+  for (const auto &m : music.value()) {
+    logger::info(m.path);
   }
 
-  auto assets = repo.getAllAssets();
-
-  for (const auto &a : assets.value()) {
-    logger::info(a);
+  auto sfx = registry.getSfx();
+  for (const auto &s : sfx.value()) {
+    logger::info(s.path);
   }
 
-  auto tags = repo.getAssetsByTag("ally");
-
-  for (const auto &t : tags.value()) {
-    logger::info(t);
-  }
-
-  auto types = repo.getAssetsByType("sfx");
-
-  for (const auto &t : types.value()) {
-    logger::info(t);
+  auto tex = registry.getTexture();
+  for (const auto &t : tex.value()) {
+    logger::info(t.path);
   }
 
   repo.deleteSelectedRow(1).or_else(logger::error);

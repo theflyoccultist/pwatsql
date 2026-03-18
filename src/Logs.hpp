@@ -10,10 +10,6 @@ enum class LogLevel : std::uint8_t {
   Info,
 };
 
-struct Level {
-  static LogLevel current_level;
-};
-
 class logger {
 public:
   static void set_level(LogLevel level);
@@ -22,4 +18,7 @@ public:
 
   static void info(const std::string &msg);
   static void info(const Asset &msg);
+
+private:
+  static LogLevel current_level;
 };
