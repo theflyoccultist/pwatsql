@@ -1,4 +1,4 @@
-# PwatSQL: An SQLite library for asset loading in game engines
+# PwatSQL: An SQLite3 wrapper in C++20
 
 This project was created because I wanted to try using the SQLite3 API, and have a set of functions that I could reuse later when I'll need a database for my C++ projects.
 
@@ -22,9 +22,6 @@ In my pwatgame project, I had made use of the `std::expected` feature, allowing 
 
 - **AssetRepository.cpp and AssetRepository.hpp**
 Just a dumb layer for making generic CRUD operations to the sqlite3 API. That's actually where most of the sqlite3 magic and the SQL statements are implemented.
-
-- **AssetRegistry.cpp and AssetRegistry.hpp**
-Honestly it's mostly a thin layer over `AssetRepository::getAssetByType()` to add some type safety over different types of assets. It is mostly a thing so cases such as adding the wrong type of texture (Texture as a SoundEffect asset type for example) can be avoided. Of course, making use of this file is optional, if you are sure that you are only going to have one type of assets.
 
 ## Example Program
 On Linux, you can simply build the library using the `./Build.sh` script, and run `build/example_basic -v` to see it working.
