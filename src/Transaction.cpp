@@ -4,7 +4,7 @@
 void Transaction::commit() {
   auto result = exec("COMMIT;");
   if (!result) {
-    logger::error(result.error());
+    Logger::error(result.error());
     commited = false;
     return;
   }
@@ -17,7 +17,7 @@ Transaction::~Transaction() {
     auto result = exec("ROLLBACK;");
 
     if (!result) {
-      logger::error(result.error());
+      Logger::error(result.error());
     }
   }
 }

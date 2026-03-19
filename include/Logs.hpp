@@ -10,7 +10,7 @@ enum class LogLevel : std::uint8_t {
   Info,
 };
 
-class logger {
+class Logger {
 public:
   static void set_level(LogLevel level);
 

@@ -1,8 +1,8 @@
 # PwatSQL: An SQLite library for asset loading in game engines
 
-This project was created because I wanted to try using the SQLite3 API, and also because I wanted a way to load assets in my future game engines without recompilation. That had been one of the pain points I encountered while developing pwatgame, and this set of functions will hopefully be a way to remedy that for the future.
+This project was created because I wanted to try using the SQLite3 API, and have a set of functions that I could reuse later when I'll need a database for my C++ projects.
 
-Features:
+## Features:
 - **Prepared statements**
 This allows preventing SQL injections, and binding different variables to placeholders after compiling it only once. Pretty useful for Asset systems where similar queries might run many times over.
 Prepared statements are basically like tiny programs, and the steps are as follows:
@@ -24,10 +24,104 @@ In my pwatgame project, I had made use of the `std::expected` feature, allowing 
 Just a dumb layer for making generic CRUD operations to the sqlite3 API. That's actually where most of the sqlite3 magic and the SQL statements are implemented.
 
 - **AssetRegistry.cpp and AssetRegistry.hpp**
-Honestly it's mostly a thin layer over `AssetRepository::getAssetByType()` to add some type safety over different types of assets. It is mostly a thing so cases such as adding the wrong type of texture (Texture as a SoundEffect asset type for example) can be avoided.
+Honestly it's mostly a thin layer over `AssetRepository::getAssetByType()` to add some type safety over different types of assets. It is mostly a thing so cases such as adding the wrong type of texture (Texture as a SoundEffect asset type for example) can be avoided. Of course, making use of this file is optional, if you are sure that you are only going to have one type of assets.
 
-- **AssetCache.hpp**
-Databases are made storing data persistently, but they aren't really made to be performant when doing repetitive calls. So, cache using Hash Maps are a thing. Hash Maps and Databases complement each other because one has speed and type safety, while the other has persistence. It's mostly a matter of milliseconds vs nanoseconds, but since I use C++ I like making speed demons when possible.
+## Example Program
+On Linux, you can simply build the library using the `./Build.sh` script, and run `build/example_basic -v` to see it working.
 
-- **main.cpp**
-At the moment it just exists to show example usages, and test my own stuff to see if it works as expected. Eventually I'm gonna add Lua so that assets can be loaded without recompiling the program, so that assets can be loaded just by writing a bit of Lua. There is also a toggle mode to enable verbose mode with `-v` or `--verbose`. Default mode only shows important errors, Verbose mode shows the work that sqlite3 does.
+## Usage
+
+#### Add Verbose Mode:
+
+```cpp
+#include <pwatsql.hpp>
+
+int main(int argc, char **argv) {
+  bool verbose = false;
+
+  for (int i = 1; i < argc; ++i) {
+    std::string arg = argv[1];
+
+    if (arg == "-v" || arg == "--verbose") {
+      verbose = true;
+    }
+  }
+}
+
+  verbose ? Logger::set_level(LogLevel::Info)
+          : Logger::set_level(LogLevel::Error);
+
+```
+
+#### Quick Start:
+
+```cpp
+  auto db_result = Database::open("db.sqlite3");
+  if (!db_result) {
+    Logger::error(db_result.error());
+    return 1;
+}
+
+  Database db = std::move(db_result.value());
+  AssetRepository repo(db);
+  Transaction txn(db);
+
+  repo.createTable().or_else(Logger::error);
+
+  // Some asset actions
+
+  txn.commit();
+```
+
+#### Inserting Assets:
+
+```cpp
+  const auto now = std::chrono::system_clock::now();
+  const std::time_t t_c = std::chrono::system_clock::to_time_t(now);
+
+  repo.insertData({.type = "music",
+                   .path = "music/loudboom.wav",
+                   .last_modified = t_c,
+                   .tags = "combat,menu"})
+      .or_else(Logger::error);
+
+  repo.insertData({.type = "sfx",
+                   .path = "sfx/danger.ogg",
+                   .last_modified = t_c,
+                   .tags = "enemy,action"})
+      .or_else(Logger::error);
+
+  repo.insertData({.type = "texture",
+                   .path = "texture/hero.png",
+                   .last_modified = t_c,
+                   .tags = "character,mesh"})
+      .or_else(Logger::error);
+```
+
+#### Updating Assets:
+
+```cpp
+  repo.updateData({.id = 2,
+                   .type = "sfx",
+                   .path = "sfx/angelic.ogg",
+                   .last_modified = t_c,
+                   .tags = "ally,luck"})
+      .or_else(Logger::error);
+```
+
+#### Querying Assets:
+
+```cpp
+  auto music = repo.getAssetsByType("music");
+  for (const auto &m : music.value()) {
+    Logger::info(m.path);
+  }
+```
+
+#### Deleting Assets:
+
+```cpp
+  repo.deleteSelectedRow(1).or_else(Logger::error);
+```
+
+Feel free to add caching and some Lua scripting for example, so you can benefit from performance and actually loading assets without hardcoding anything onto C++. Those are outside the scope of this small library, but perfect for an actual game engine.

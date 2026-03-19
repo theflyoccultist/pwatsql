@@ -9,7 +9,7 @@ class Transaction {
 
 public:
   explicit Transaction(Database &db) : db_(db) {
-    exec("BEGIN TRANSACTION;").or_else(logger::error);
+    exec("BEGIN TRANSACTION;").or_else(Logger::error);
   }
 
   Transaction(const Transaction &) = delete;

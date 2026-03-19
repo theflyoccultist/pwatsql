@@ -1,13 +1,7 @@
-#include <AssetRegistry.hpp>
-#include <AssetRepository.hpp>
-#include <AssetTypes.hpp>
-#include <Database.hpp>
-#include <ErrorHandling.hpp>
-#include <Logs.hpp>
-#include <Transaction.hpp>
 
 #include <chrono>
 #include <ctime>
+#include <pwatsql.hpp>
 #include <string>
 
 int main(int argc, char **argv) {
@@ -21,8 +15,8 @@ int main(int argc, char **argv) {
     }
   }
 
-  verbose ? logger::set_level(LogLevel::Info)
-          : logger::set_level(LogLevel::Error);
+  verbose ? Logger::set_level(LogLevel::Info)
+          : Logger::set_level(LogLevel::Error);
 
   // Test Program
 
@@ -31,61 +25,60 @@ int main(int argc, char **argv) {
 
   auto db_result = Database::open("db.sqlite3");
   if (!db_result) {
-    logger::error(db_result.error());
+    Logger::error(db_result.error());
     return 1;
   }
 
   Database db = std::move(db_result.value());
   AssetRepository repo(db);
-  AssetRegistry registry(repo);
 
   Transaction txn(db);
 
-  repo.createTable().or_else(logger::error);
+  repo.createTable().or_else(Logger::error);
 
   repo.insertData({.type = "music",
                    .path = "music/loudboom.wav",
                    .last_modified = t_c,
                    .tags = "combat,menu"})
-      .or_else(logger::error);
+      .or_else(Logger::error);
 
   repo.insertData({.type = "sfx",
                    .path = "sfx/danger.ogg",
                    .last_modified = t_c,
                    .tags = "enemy,action"})
-      .or_else(logger::error);
+      .or_else(Logger::error);
 
   repo.insertData({.type = "texture",
                    .path = "texture/hero.png",
                    .last_modified = t_c,
                    .tags = "character,mesh"})
-      .or_else(logger::error);
+      .or_else(Logger::error);
 
   repo.updateData({.id = 2,
                    .type = "sfx",
                    .path = "sfx/angelic.ogg",
                    .last_modified = t_c,
                    .tags = "ally,luck"})
-      .or_else(logger::error);
+      .or_else(Logger::error);
 
   txn.commit();
 
-  auto music = registry.getMusic();
+  auto music = repo.getAssetsByType("music");
   for (const auto &m : music.value()) {
-    logger::info(m.path);
+    Logger::info(m.path);
   }
 
-  auto sfx = registry.getSfx();
+  auto sfx = repo.getAssetsByType("sfx");
   for (const auto &s : sfx.value()) {
-    logger::info(s.path);
+    Logger::info(s.path);
   }
 
-  auto tex = registry.getTexture();
+  auto tex = repo.getAssetsByType("texture");
   for (const auto &t : tex.value()) {
-    logger::info(t.path);
+    Logger::info(t.path);
   }
 
-  repo.deleteSelectedRow(1).or_else(logger::error);
+  repo.deleteSelectedRow(1).or_else(Logger::error);
 
   return 0;
 }
