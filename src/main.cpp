@@ -1,9 +1,11 @@
-#include "AssetRegistry.hpp"
+#include <AssetRegistry.hpp>
 #include <AssetRepository.hpp>
+#include <AssetTypes.hpp>
 #include <Database.hpp>
 #include <ErrorHandling.hpp>
 #include <Logs.hpp>
 #include <Transaction.hpp>
+
 #include <chrono>
 #include <ctime>
 #include <string>
