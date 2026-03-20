@@ -1,5 +1,10 @@
 #include <ErrorHandling.hpp>
 #include <Statement.hpp>
+#include <cstddef>
+#include <stdexcept>
+#include <string>
+#include <type_traits>
+#include <variant>
 
 ResultT<Statement> Statement::prepare(sqlite3 *db, const char *query) {
   sqlite3_stmt *stmt = nullptr;
@@ -21,26 +26,22 @@ Statement::~Statement() {
   }
 };
 
-ResultT<Unit> Statement::bind_int(int index, int value) {
-  if (sqlite3_bind_int(stmt_, index, value) != SQLITE_OK) {
-    return ResultT<Unit>::err(DbError::BindFailed);
-  }
-  return ResultT<Unit>::ok(Unit{});
-};
+void Statement::bind(int index, const Value &v) {
+  std::visit(
+      [&](auto &&val) {
+        using T = std::decay_t<decltype(val)>;
 
-ResultT<Unit> Statement::bind_int64(int index, std::int64_t value) {
-  if (sqlite3_bind_int64(stmt_, index, value) != SQLITE_OK) {
-    return ResultT<Unit>::err(DbError::BindFailed);
-  }
-  return ResultT<Unit>::ok(Unit{});
-};
-
-ResultT<Unit> Statement::bind_text(int index, const std::string &value) {
-  if (sqlite3_bind_text(stmt_, index, value.c_str(), -1, nullptr) !=
-      SQLITE_OK) {
-    return ResultT<Unit>::err(DbError::BindFailed);
-  }
-  return ResultT<Unit>::ok(Unit{});
+        if constexpr (std::is_same_v<T, int64_t>) {
+          sqlite3_bind_int64(stmt_, index, val);
+        } else if constexpr (std::is_same_v<T, double>) {
+          sqlite3_bind_double(stmt_, index, val);
+        } else if constexpr (std::is_same_v<T, std::string>) {
+          sqlite3_bind_text(stmt_, index, val.c_str(), -1, nullptr);
+        } else if constexpr (std::is_same_v<T, std::nullptr_t>) {
+          sqlite3_bind_null(stmt_, index);
+        }
+      },
+      v);
 };
 
 ResultT<bool> Statement::step() {
@@ -56,15 +57,29 @@ ResultT<bool> Statement::step() {
   return ResultT<bool>::err(DbError::ConstraintError);
 }
 
-int Statement::column_int(int index) {
-  return sqlite3_column_int(stmt_, index);
-}
+Value Statement::column(int index) {
+  int type = sqlite3_column_type(stmt_, index);
 
-std::int64_t Statement::column_int64(int index) {
-  return sqlite3_column_int64(stmt_, index);
-}
+  switch (type) {
+  case SQLITE_INTEGER: {
+    return sqlite3_column_int64(stmt_, index);
+  }
 
-std::string Statement::column_text(int index) {
-  const unsigned char *text = sqlite3_column_text(stmt_, index);
-  return (text != nullptr) ? reinterpret_cast<const char *>(text) : "";
+  case SQLITE_FLOAT: {
+    return sqlite3_column_double(stmt_, index);
+  }
+
+  case SQLITE_TEXT: {
+    const unsigned char *text = sqlite3_column_text(stmt_, index);
+    return (text != nullptr) ? reinterpret_cast<const char *>(text) : "";
+  }
+
+  case SQLITE_NULL: {
+    return nullptr;
+  }
+
+  default: {
+    throw std::runtime_error("Unsupported SQLite column type");
+  }
+  }
 }

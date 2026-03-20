@@ -1,27 +1,43 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
+#include <utility>
+#include <variant>
+#include <vector>
 
-struct NewAsset {
+struct Column {
+  std::string name;
   std::string type;
-  std::string path;
-  std::int64_t last_modified;
-  std::string tags;
 };
 
-struct AssetUpdate {
-  int id;
-  std::string type;
-  std::string path;
-  std::int64_t last_modified;
-  std::string tags;
+struct Table {
+  std::string name;
+  std::vector<Column> columns;
 };
 
-struct Asset {
-  int id;
-  std::string type;
-  std::string path;
-  std::int64_t last_modified;
-  std::string tags;
+using Value = std::variant<int64_t, double, std::string, std::nullptr_t>;
+
+struct InsertRow {
+  std::string tableName;
+  std::vector<std::pair<std::string, Value>> values;
+};
+
+struct UpdateRow {
+  std::string tableName;
+  std::vector<std::pair<std::string, Value>> values;
+  int64_t id;
+};
+
+struct DeleteRow {
+  std::string tableName;
+  int64_t id;
+};
+
+struct SelectQuery {
+  std::string tableName;
+  std::vector<std::string> columns;
+  std::string whereColumn;
+  Value query;
 };

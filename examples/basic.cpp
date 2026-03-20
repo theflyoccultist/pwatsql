@@ -1,8 +1,12 @@
+#include "Asset.hpp"
+#include <pwatsql.hpp>
 
 #include <chrono>
+#include <cstdint>
 #include <ctime>
-#include <pwatsql.hpp>
 #include <string>
+
+// Basic example
 
 int main(int argc, char **argv) {
   bool verbose = false;
@@ -18,8 +22,6 @@ int main(int argc, char **argv) {
   verbose ? Logger::set_level(LogLevel::Info)
           : Logger::set_level(LogLevel::Error);
 
-  // Test Program
-
   const auto now = std::chrono::system_clock::now();
   const std::time_t t_c = std::chrono::system_clock::to_time_t(now);
 
@@ -34,51 +36,70 @@ int main(int argc, char **argv) {
 
   Transaction txn(db);
 
-  repo.createTable().or_else(Logger::error);
+  Table assets = {.name = "ASSETS",
+                  .columns = {
+                      {"ID", "INTEGER PRIMARY KEY"},
+                      {"TYPE", "TEXT"},
+                      {"PATH", "TEXT"},
+                      {"LAST_MODIFIED", "INTEGER"},
+                  }};
 
-  repo.insertData({.type = "music",
-                   .path = "music/loudboom.wav",
-                   .last_modified = t_c,
-                   .tags = "combat,menu"})
-      .or_else(Logger::error);
+  repo.createTable(assets).or_else(Logger::error);
 
-  repo.insertData({.type = "sfx",
-                   .path = "sfx/danger.ogg",
-                   .last_modified = t_c,
-                   .tags = "enemy,action"})
-      .or_else(Logger::error);
+  InsertRow row_1 = {.tableName = "ASSETS",
+                     .values = {
+                         {"TYPE", std::string("sfx")},
+                         {"PATH", std::string("assets/combat.wav")},
+                         {"LAST_MODIFIED", int64_t(t_c)},
+                     }};
 
-  repo.insertData({.type = "texture",
-                   .path = "texture/hero.png",
-                   .last_modified = t_c,
-                   .tags = "character,mesh"})
-      .or_else(Logger::error);
+  repo.insertData(row_1).or_else(Logger::error);
 
-  repo.updateData({.id = 2,
-                   .type = "sfx",
-                   .path = "sfx/angelic.ogg",
-                   .last_modified = t_c,
-                   .tags = "ally,luck"})
-      .or_else(Logger::error);
+  InsertRow row_2 = {.tableName = "ASSETS",
+                     .values = {
+                         {"TYPE", std::string("sfx")},
+                         {"PATH", std::string("assets/angelic.wav")},
+                         {"LAST_MODIFIED", int64_t(t_c)},
+                     }};
+
+  repo.insertData(row_2).or_else(Logger::error);
 
   txn.commit();
 
-  auto music = repo.getAssetsByType("music");
-  for (const auto &m : music.value()) {
-    Logger::info(m.path);
+  UpdateRow row_2_update = {
+      .tableName = "ASSETS",
+      .values =
+          {
+              {"TYPE", std::string("music")},
+              {"PATH", std::string("assets/boogie.ogg")},
+              {"LAST_MODIFIED", int64_t(t_c)},
+          },
+      .id = 2,
+  };
+
+  repo.updateData(row_2_update).or_else(Logger::error);
+
+  SelectQuery select_music = {
+      .tableName = "ASSETS",
+      .columns = {"PATH", "LAST_MODIFIED"},
+      .whereColumn = "TYPE",
+      .query = std::string("sfx"),
+  };
+
+  auto select = repo.getWhere(select_music);
+  Logger::info("Selected row: ");
+  for (const auto &entry : select.value()) {
+    for (const auto &e : entry) {
+      Logger::info(e);
+    }
   }
 
-  auto sfx = repo.getAssetsByType("sfx");
-  for (const auto &s : sfx.value()) {
-    Logger::info(s.path);
-  }
+  DeleteRow row_2_delete = {
+      .tableName = "ASSETS",
+      .id = 2,
+  };
 
-  auto tex = repo.getAssetsByType("texture");
-  for (const auto &t : tex.value()) {
-    Logger::info(t.path);
-  }
-
-  repo.deleteSelectedRow(1).or_else(Logger::error);
+  repo.deleteRow(row_2_delete).or_else(Logger::error);
 
   return 0;
 }

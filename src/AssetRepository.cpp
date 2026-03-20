@@ -4,20 +4,30 @@
 
 #include <format>
 #include <string>
-#include <string_view>
 #include <utility>
 #include <vector>
 
-using std::vector;
+std::string AssetRepository::createTableSQL(const Table &t) {
+  std::string sql = "CREATE TABLE IF NOT EXISTS " + t.name + " (";
 
-ResultT<Unit> AssetRepository::createTable() {
-  auto stmt_result =
-      Statement::prepare(db_.get(), "CREATE TABLE IF NOT EXISTS ASSETS ("
-                                    "ID INTEGER PRIMARY KEY AUTOINCREMENT,"
-                                    "TYPE TEXT NOT NULL,"
-                                    "PATH TEXT NOT NULL UNIQUE,"
-                                    "LAST_MODIFIED INTEGER NOT NULL,"
-                                    "TAGS TEXT)");
+  for (size_t i = 0; i < t.columns.size(); ++i) {
+    const auto &col = t.columns[i];
+    sql += col.name + " " + col.type;
+
+    if (i != t.columns.size() - 1) {
+      sql += ", ";
+    }
+  }
+
+  sql += ");";
+  Logger::info(std::format("SQL: {}", sql));
+  return sql;
+}
+
+ResultT<Unit> AssetRepository::createTable(const Table &table) {
+  std::string sql = createTableSQL(table);
+
+  auto stmt_result = Statement::prepare(db_.get(), sql.c_str());
   if (!stmt_result) {
     Logger::error(stmt_result.error());
     return ResultT<Unit>::err(DbError::PrepareFailed);
@@ -28,21 +38,40 @@ ResultT<Unit> AssetRepository::createTable() {
   stmt.step().or_else(Logger::error);
   stmt.reset();
 
-  Logger::info("Table created");
-
   return ResultT<Unit>::ok(Unit{});
 }
 
-const int type_idx = 1;
-const int path_idx = 2;
-const int lastmodified_idx = 3;
-const int tags_idx = 4;
-const int id_idx = 5;
+std::string AssetRepository::insertDataSQL(const InsertRow &row) {
+  std::string sql = "INSERT INTO " + row.tableName + " (";
 
-ResultT<Unit> AssetRepository::insertData(const NewAsset &asset) {
-  auto stmt_result = Statement::prepare(
-      db_.get(), "INSERT INTO ASSETS (TYPE, PATH, LAST_MODIFIED, TAGS) "
-                 "VAlUES (?, ?, ?, ?)");
+  for (size_t i = 0; i < row.values.size(); ++i) {
+    const auto &col = row.values[i].first;
+    sql += col + " ";
+
+    if (i != row.values.size() - 1) {
+      sql += ", ";
+    }
+  }
+
+  sql += ") VALUES (";
+
+  for (size_t i = 0; i < row.values.size(); ++i) {
+    sql += "? ";
+
+    if (i != row.values.size() - 1) {
+      sql += ", ";
+    }
+  }
+
+  sql += ") ";
+  Logger::info(std::format("SQL: {}", sql));
+  return sql;
+}
+
+ResultT<Unit> AssetRepository::insertData(const InsertRow &row) {
+  std::string sql = insertDataSQL(row);
+
+  auto stmt_result = Statement::prepare(db_.get(), sql.c_str());
   if (!stmt_result) {
     Logger::error(stmt_result.error());
     return ResultT<Unit>::err(DbError::PrepareFailed);
@@ -50,26 +79,38 @@ ResultT<Unit> AssetRepository::insertData(const NewAsset &asset) {
 
   Statement stmt = std::move(stmt_result.value());
 
-  stmt.bind_text(type_idx, asset.type).or_else(Logger::error);
-  stmt.bind_text(path_idx, asset.path).or_else(Logger::error);
-  stmt.bind_int64(lastmodified_idx, asset.last_modified).or_else(Logger::error);
-  stmt.bind_text(tags_idx, asset.tags).or_else(Logger::error);
+  for (int i = 0; i < row.values.size(); ++i) {
+    stmt.bind(i + 1, row.values[i].second);
+  }
 
   stmt.step().or_else(Logger::error);
   stmt.reset();
 
-  Logger::info(
-      std::format("Asset inserted: type={} path={} last_modified={} tags={}",
-                  asset.type, asset.path, asset.last_modified, asset.tags));
-
   return ResultT<Unit>::ok(Unit{});
 }
 
-ResultT<Unit> AssetRepository::updateData(const AssetUpdate &asset) {
-  auto stmt_result = Statement::prepare(
-      db_.get(),
-      "UPDATE ASSETS SET TYPE = ?, PATH = ?, LAST_MODIFIED = ?, TAGS = ? "
-      "WHERE ID = ?");
+std::string AssetRepository::updateDataSQL(const UpdateRow &row) {
+  std::string sql = "UPDATE " + row.tableName + " SET ";
+
+  for (size_t i = 0; i < row.values.size(); ++i) {
+    const auto &col = row.values[i].first;
+    sql += col + " = ? ";
+
+    if (i != row.values.size() - 1) {
+      sql += ", ";
+    }
+  }
+
+  sql += "WHERE ID = ?";
+
+  Logger::info(std::format("SQL: {}", sql));
+  return sql;
+}
+
+ResultT<Unit> AssetRepository::updateData(const UpdateRow &row) {
+  std::string sql = updateDataSQL(row);
+
+  auto stmt_result = Statement::prepare(db_.get(), sql.c_str());
   if (!stmt_result) {
     Logger::error(stmt_result.error());
     return ResultT<Unit>::err(DbError::PrepareFailed);
@@ -77,25 +118,28 @@ ResultT<Unit> AssetRepository::updateData(const AssetUpdate &asset) {
 
   Statement stmt = std::move(stmt_result.value());
 
-  stmt.bind_text(type_idx, asset.type).or_else(Logger::error);
-  stmt.bind_text(path_idx, asset.path).or_else(Logger::error);
-  stmt.bind_int64(lastmodified_idx, asset.last_modified).or_else(Logger::error);
-  stmt.bind_text(tags_idx, asset.tags).or_else(Logger::error);
-  stmt.bind_int(id_idx, asset.id).or_else(Logger::error);
+  for (int i = 0; i < row.values.size(); ++i) {
+    stmt.bind(i + 1, row.values[i].second);
+  }
+
+  stmt.bind(static_cast<int>(row.values.size() + 1), row.id);
 
   stmt.step().or_else(Logger::error);
   stmt.reset();
 
-  Logger::info(std::format(
-      "Asset updated: type={} path={} last_modified={} tags={} id={}",
-      asset.type, asset.path, asset.last_modified, asset.tags, asset.id));
-
   return ResultT<Unit>::ok(Unit{});
 }
 
-ResultT<Unit> AssetRepository::deleteSelectedRow(int id) {
-  auto stmt_result =
-      Statement::prepare(db_.get(), "DELETE FROM ASSETS WHERE ID = ?");
+std::string AssetRepository::deleteRowSQL(const DeleteRow &row) {
+  std::string sql = "DELETE FROM " + row.tableName + " WHERE ID = ?";
+  Logger::info(std::format("SQL: {}", sql));
+  return sql;
+}
+
+ResultT<Unit> AssetRepository::deleteRow(const DeleteRow &row) {
+  std::string sql = deleteRowSQL(row);
+
+  auto stmt_result = Statement::prepare(db_.get(), sql.c_str());
   if (!stmt_result) {
     Logger::error(stmt_result.error());
     return ResultT<Unit>::err(DbError::PrepareFailed);
@@ -103,121 +147,68 @@ ResultT<Unit> AssetRepository::deleteSelectedRow(int id) {
 
   Statement stmt = std::move(stmt_result.value());
 
-  stmt.bind_int(1, id).or_else(Logger::error);
+  stmt.bind(1, row.id);
 
   stmt.step().or_else(Logger::error);
   stmt.reset();
-
-  Logger::info(std::format("Asset deleted: id={}", id));
 
   return ResultT<Unit>::ok(Unit{});
 }
 
-ResultT<Asset> AssetRepository::getAssetById(int id) {
-  auto stmt_result = Statement::prepare(
-      db_.get(), "SELECT TYPE, PATH, LAST_MODIFIED, TAGS FROM ASSETS "
-                 "WHERE ID = ?");
+std::string AssetRepository::selectRowSQL(const SelectQuery &row) {
+  std::string sql = "SELECT ";
+  for (size_t i = 0; i < row.columns.size(); ++i) {
+    sql += row.columns[i];
+    if (i != row.columns.size() - 1) {
+      sql += ", ";
+    }
+  }
+
+  sql += " FROM " + row.tableName + " WHERE " + row.whereColumn + " = ?";
+
+  Logger::info(std::format("SQL: {}", sql));
+  return sql;
+}
+
+ResultT<std::vector<std::vector<Value>>>
+AssetRepository::getWhere(const SelectQuery &row) {
+  std::string sql = selectRowSQL(row);
+
+  auto stmt_result = Statement::prepare(db_.get(), sql.c_str());
 
   if (!stmt_result) {
     Logger::error(stmt_result.error());
-    return Result<Asset, DbError>::err(DbError::PrepareFailed);
+    return ResultT<std::vector<std::vector<Value>>>::err(
+        DbError::PrepareFailed);
   }
 
   Statement stmt = std::move(stmt_result.value());
 
-  stmt.bind_int(1, id).or_else(Logger::error);
-  stmt.step().or_else(Logger::error);
+  stmt.bind(1, row.query);
 
-  Asset asset;
-  asset.id = id;
-  asset.type = stmt.column_text(0);
-  asset.path = stmt.column_text(1);
-  asset.last_modified = stmt.column_int64(2);
-  asset.tags = stmt.column_text(3);
+  std::vector<std::vector<Value>> result;
 
-  stmt.reset();
-
-  Logger::info(std::format("Asset retrieved: id={}", asset.id));
-
-  return Result<Asset, DbError>::ok(asset);
-}
-
-namespace {
-ResultT<vector<Asset>> getAssets(Statement &stmt, vector<Asset> &result) {
   for (;;) {
     auto step = stmt.step();
 
     if (!step) {
       Logger::error(step.error());
-      break;
+      return ResultT<std::vector<std::vector<Value>>>::err(DbError::StepFailed);
     }
 
     if (!step.value()) {
       break;
     }
 
-    Asset asset{
-        .id = stmt.column_int(0),
-        .type = stmt.column_text(1),
-        .path = stmt.column_text(2),
-        .last_modified = stmt.column_int64(3),
-        .tags = stmt.column_text(4),
-    };
+    std::vector<Value> entry;
+    entry.reserve(row.columns.size());
 
-    result.push_back(std::move(asset));
+    for (int i = 0; i < row.columns.size(); ++i) {
+      entry.emplace_back(stmt.column(i));
+    }
+
+    result.push_back(std::move(entry));
   }
 
-  stmt.reset();
-
-  Logger::info(std::format("Retrieved {} assets from database", result.size()));
-
-  return Result<vector<Asset>, DbError>::ok(result);
+  return ResultT<std::vector<std::vector<Value>>>::ok(result);
 }
-} // namespace
-
-ResultT<vector<Asset>> AssetRepository::getAssetsByType(std::string_view type) {
-  auto stmt_result =
-      Statement::prepare(db_.get(), "SELECT * FROM ASSETS WHERE TYPE = ? ");
-  if (!stmt_result) {
-    Logger::error(stmt_result.error());
-    return Result<vector<Asset>, DbError>::err(DbError::PrepareFailed);
-  }
-
-  Statement stmt = std::move(stmt_result.value());
-
-  stmt.bind_text(1, std::string(type)).or_else(Logger::error);
-  vector<Asset> result{};
-
-  return getAssets(stmt, result);
-}
-
-ResultT<vector<Asset>> AssetRepository::getAssetsByTag(std::string_view tag) {
-  auto stmt_result = Statement::prepare(
-      db_.get(), "SELECT * FROM ASSETS WHERE TAGS LIKE '%' || ? || '%' ");
-  if (!stmt_result) {
-    Logger::error(stmt_result.error());
-    return Result<vector<Asset>, DbError>::err(DbError::PrepareFailed);
-  }
-
-  Statement stmt = std::move(stmt_result.value());
-
-  stmt.bind_text(1, std::string(tag)).or_else(Logger::error);
-  vector<Asset> result{};
-
-  return getAssets(stmt, result);
-}
-
-ResultT<vector<Asset>> AssetRepository::getAllAssets() {
-  auto stmt_result = Statement::prepare(
-      db_.get(), "SELECT ID, TYPE, PATH, LAST_MODIFIED, TAGS FROM ASSETS ");
-  if (!stmt_result) {
-    Logger::error(stmt_result.error());
-    return Result<vector<Asset>, DbError>::err(DbError::PrepareFailed);
-  }
-
-  Statement stmt = std::move(stmt_result.value());
-
-  vector<Asset> result{};
-
-  return getAssets(stmt, result);
-};

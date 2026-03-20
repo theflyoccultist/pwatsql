@@ -4,9 +4,6 @@
 #include <Database.hpp>
 #include <ErrorHandling.hpp>
 
-#include <string_view>
-#include <vector>
-
 class AssetRepository {
 public:
   explicit AssetRepository(Database &db) : db_(db) {}
@@ -19,17 +16,18 @@ public:
 
   ~AssetRepository() = default;
 
-  ResultT<Unit> createTable();
-  ResultT<Unit> insertData(const NewAsset &asset);
-  ResultT<Unit> updateData(const AssetUpdate &asset);
-  ResultT<Unit> deleteSelectedRow(int id);
-
-  ResultT<Asset> getAssetById(int id);
-  ResultT<std::vector<Asset>> getAssetsByType(std::string_view type);
-  ResultT<std::vector<Asset>> getAssetsByTag(std::string_view tag);
-
-  ResultT<std::vector<Asset>> getAllAssets();
+  ResultT<Unit> createTable(const Table &table);
+  ResultT<Unit> insertData(const InsertRow &row);
+  ResultT<Unit> updateData(const UpdateRow &row);
+  ResultT<Unit> deleteRow(const DeleteRow &row);
+  ResultT<std::vector<std::vector<Value>>> getWhere(const SelectQuery &row);
 
 private:
   Database &db_;
+
+  static std::string createTableSQL(const Table &t);
+  static std::string insertDataSQL(const InsertRow &row);
+  static std::string updateDataSQL(const UpdateRow &row);
+  static std::string deleteRowSQL(const DeleteRow &row);
+  static std::string selectRowSQL(const SelectQuery &row);
 };

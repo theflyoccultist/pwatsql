@@ -7,6 +7,7 @@ enum class DbError : std::uint8_t {
   OpenFailed,
   PrepareFailed,
   BindFailed,
+  StepFailed,
   RowReadFailed,
   ColumnReadFailed,
   TransactionError,
@@ -25,6 +26,9 @@ inline std::ostream &operator<<(std::ostream &os, const DbError &err) {
     break;
   case DbError::BindFailed:
     os << "sqlite error: bind failed";
+    break;
+  case DbError::StepFailed:
+    os << "sqlite error: step failed";
     break;
   case DbError::ColumnReadFailed:
     os << "sqlite error: column read failed";

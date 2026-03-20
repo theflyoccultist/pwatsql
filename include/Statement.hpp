@@ -1,10 +1,9 @@
 #pragma once
 
+#include <Asset.hpp>
 #include <DbError.hpp>
 #include <ErrorHandling.hpp>
-#include <cstdint>
 #include <sqlite3.h>
-#include <string>
 
 class Statement {
 public:
@@ -33,15 +32,10 @@ public:
 
   [[nodiscard]] sqlite3_stmt *get() const noexcept { return stmt_; }
 
-  ResultT<Unit> bind_int(int index, int value);
-  ResultT<Unit> bind_text(int index, const std::string &value);
-  ResultT<Unit> bind_int64(int index, std::int64_t value);
+  void bind(int index, const Value &v);
 
   ResultT<bool> step();
-
-  int column_int(int index);
-  std::int64_t column_int64(int index);
-  std::string column_text(int index);
+  Value column(int index);
 
 private:
   sqlite3_stmt *stmt_ = nullptr;

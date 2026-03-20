@@ -3,7 +3,6 @@
 #include <Asset.hpp>
 #include <DbError.hpp>
 #include <cstdint>
-#include <string>
 
 enum class LogLevel : std::uint8_t {
   Error,
@@ -15,8 +14,7 @@ public:
   static void set_level(LogLevel level);
 
   static void error(const DbError &msg);
-
-  static void info(const std::string &msg);
+  static void info(const Value &msg);
 
 private:
   static LogLevel current_level;
