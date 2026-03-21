@@ -8,7 +8,7 @@
 #include <vector>
 
 std::string AssetRepository::createTableSQL(const Table &t) {
-  std::string sql = "CREATE TABLE IF NOT EXISTS " + t.name + " (";
+  std::string sql = "CREATE TABLE IF NOT EXISTS " + t.tableName + " (";
 
   for (size_t i = 0; i < t.columns.size(); ++i) {
     const auto &col = t.columns[i];

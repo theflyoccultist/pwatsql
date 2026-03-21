@@ -13,7 +13,7 @@ struct Column {
 };
 
 struct Table {
-  std::string name;
+  std::string tableName;
   std::vector<Column> columns;
 };
 

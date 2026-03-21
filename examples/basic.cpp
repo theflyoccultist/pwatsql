@@ -39,7 +39,7 @@ int main(int argc, char **argv) {
   Transaction txn(db);
 
   // Create table
-  Table assets = {.name = "ASSETS",
+  Table assets = {.tableName = "ASSETS",
                   .columns = {
                       {"ID", "INTEGER PRIMARY KEY"},
                       {"TYPE", "TEXT"},
